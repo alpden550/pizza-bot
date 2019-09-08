@@ -16,18 +16,6 @@ def open_json(file):
     return data
 
 
-def get_moltin_token():
-    url = 'https://api.moltin.com/oauth/access_token'
-    data = {
-        'client_id': os.getenv('MOLTIN_CLIENT_ID'),
-        'client_secret': os.getenv('MOLTIN_CLIENT_SECRET'),
-        'grant_type': 'client_credentials',
-    }
-    response = requests.get(url, data=data)
-    response.raise_for_status()
-    return response.json().get('access_token')
-
-
 def headers_wrapper(func):
 
     @wraps(func)
