@@ -103,21 +103,23 @@ def create_menu(file):
         pizzas = None
         logging.error(error)
 
-    if pizzas:
-        for pizza in pizzas:
-            try:
-                name = pizza['name']
-                description = pizza['description']
-                price = pizza['price']
-                image = pizza['product_image']['url']
-                create_full_product(
-                    name=name,
-                    description=description,
-                    price=price,
-                    image=image
-                )
-            except requests.HTTPError as error:
-                logging.error(error)
+    if not pizzas:
+        exit
+
+    for pizza in pizzas:
+        try:
+            name = pizza['name']
+            description = pizza['description']
+            price = pizza['price']
+            image = pizza['product_image']['url']
+            create_full_product(
+                name=name,
+                description=description,
+                price=price,
+                image=image
+            )
+        except requests.HTTPError as error:
+            logging.error(error)
 
 
 @headers_wrapper
@@ -212,18 +214,20 @@ def create_pizzaries_from_json(file):
         pizzerias = None
         logging.error(error)
 
-    if pizzerias:
-        for pizzeria in pizzerias:
-            try:
-                create_pizzeria_entry(
-                    flow_slug='nashi-pitstserii',
-                    addresses=pizzeria.get('address').get('full'),
-                    allias=pizzeria.get('alias'),
-                    longitude=pizzeria.get('coordinates').get('lon'),
-                    latitude=pizzeria.get('coordinates').get('lat')
-                )
-            except requests.HTTPError as error:
-                logging.error(error)
+    if not pizzerias:
+        exit
+
+    for pizzeria in pizzerias:
+        try:
+            create_pizzeria_entry(
+                flow_slug='nashi-pitstserii',
+                addresses=pizzeria.get('address').get('full'),
+                allias=pizzeria.get('alias'),
+                longitude=pizzeria.get('coordinates').get('lon'),
+                latitude=pizzeria.get('coordinates').get('lat')
+            )
+        except requests.HTTPError as error:
+            logging.error(error)
 
 
 @headers_wrapper
