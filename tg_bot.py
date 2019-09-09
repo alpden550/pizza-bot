@@ -31,21 +31,21 @@ def get_closest_pizzeria(coordinates, flow_slug='pizzerias'):
     entries = moltin.get_all_entries(flow_slug)
     pizzerias = []
     for entry in entries:
-        p_name = entry['pizza-alias']
-        p_address = entry['pizza-address']
-        p_longitude = entry['longitude']
-        p_latitude = entry['latitude']
-        pizzeria_point = Point(p_latitude, p_longitude)
+        pizzeria_name = entry['pizza-alias']
+        pizzeria_address = entry['pizza-address']
+        pizzeria_longitude = entry['longitude']
+        pizzetia_latitude = entry['latitude']
+        pizzeria_point = Point(pizzetia_latitude, pizzeria_longitude)
         coordinates_point = Point(coordinates[1], coordinates[0])
-        p_distance = distance.distance(pizzeria_point, coordinates_point).km
-        p_id = entry['id']
+        pizzeria_distance = distance.distance(pizzeria_point, coordinates_point).km
+        pizzeria_id = entry['id']
         data = {
-            'alias': p_name,
-            'address': p_address,
-            'longitude': p_longitude,
-            'latitude': p_latitude,
-            'distance': p_distance,
-            'id': p_id,
+            'alias': pizzeria_name,
+            'address': pizzeria_address,
+            'longitude': pizzeria_longitude,
+            'latitude': pizzetia_latitude,
+            'distance': pizzeria_distance,
+            'id': pizzeria_id,
         }
         pizzerias.append(data)
     closest_pizzeria = min(pizzerias, key=itemgetter('distance'))
@@ -365,18 +365,18 @@ def handle_delivery_choosing(bot, update):
     user_data = json.loads(db.get(chat_id))
     closest_pizzeria = user_data['closest_pizzeria']
     customer_geo = user_data['customer_geo']
-    p_name = closest_pizzeria['alias']
-    p_address = closest_pizzeria['address']
-    p_id = closest_pizzeria['id']
-    cus_longitude, cus_latitude = customer_geo
+    pizzeria_name = closest_pizzeria['alias']
+    pizzeria_address = closest_pizzeria['address']
+    pizzeria_id = closest_pizzeria['id']
+    customer_longitude, customer_latitude = customer_geo
 
     if query.data == 'pickup':
         bot.send_message(
             chat_id=chat_id,
-            text=f'Отлично! Вы можете забрать ваш заказ в ресторане {p_name} по адресу: {p_address}\n\nУдачного дня и заходите еще!'
+            text=f'Отлично! Вы можете забрать ваш заказ в ресторане {pizzeria_name} по адресу: {pizzeria_address}\n\nУдачного дня и заходите еще!'
         )
         bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-        moltin.create_customer_entry(chat_id, p_name, cus_longitude, cus_latitude)
+        moltin.create_customer_entry(chat_id, pizzeria_name, customer_longitude, customer_latitude)
 
     elif query.data == 'delivery':
         bot.send_message(
@@ -384,10 +384,9 @@ def handle_delivery_choosing(bot, update):
             text=f'Ваш заказ принят, ожидаем оплату.',
         )
         bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-        customer_id = moltin.create_customer_entry(chat_id, user_name, cus_longitude, cus_latitude)
-        deliverer = moltin.get_deliverer(p_id)
-        longitude, latitude = moltin.get_customer_coordinates(customer_id)
-        send_order_ro_deliverer(bot, chat_id, deliverer, longitude, latitude)
+        moltin.create_customer_entry(chat_id, user_name, customer_longitude, customer_latitude)
+        deliverer = moltin.get_deliverer(pizzeria_id)
+        send_order_ro_deliverer(bot, chat_id, deliverer, customer_longitude, customer_latitude)
 
         create_invoice(bot, chat_id=chat_id)
         job_queue.run_once(remind_about_order, 3600, context=chat_id)
