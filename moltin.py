@@ -233,7 +233,7 @@ def get_products(headers):
     url = f'{MOLTIN_URL}products'
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
-    products = response.json().get('data')
+    products = response.json()['data']
     return [(product['id'], product['name']) for product in products]
 
 
@@ -243,7 +243,7 @@ def get_by_id(headers, product_id):
 
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
-    return response.json().get('data')
+    return response.json()['data']
 
 
 @headers_wrapper
@@ -252,7 +252,7 @@ def get_picture(headers, product_id):
 
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
-    return response.json().get('data')['link']['href']
+    return response.json()['data']['link']['href']
 
 
 @headers_wrapper
