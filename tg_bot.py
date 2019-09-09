@@ -30,15 +30,15 @@ def get_database():
 def get_closest_pizzeria(coordinates, flow_slug='pizzerias'):
     entries = moltin.get_all_entries(flow_slug)
     pizzerias = []
-    for pizzeria in entries:
-        p_name = pizzeria['pizza-alias']
-        p_address = pizzeria['pizza-address']
-        p_longitude = pizzeria['longitude']
-        p_latitude = pizzeria['latitude']
+    for entry in entries:
+        p_name = entry['pizza-alias']
+        p_address = entry['pizza-address']
+        p_longitude = entry['longitude']
+        p_latitude = entry['latitude']
         pizzeria_point = Point(p_latitude, p_longitude)
         coordinates_point = Point(coordinates[1], coordinates[0])
         p_distance = distance.distance(pizzeria_point, coordinates_point).km
-        p_id = pizzeria['id']
+        p_id = entry['id']
         data = {
             'alias': p_name,
             'address': p_address,
