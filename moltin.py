@@ -1,9 +1,11 @@
-from functools import wraps
 import json
-import os
-from io import BytesIO
-import requests
 import logging
+import os
+from functools import wraps
+from io import BytesIO
+
+import requests
+
 from dotenv import load_dotenv
 from transliterate import translit
 
@@ -367,12 +369,3 @@ def get_customer_coordinates(headers, entry_id, flow_slug='addresses'):
 
 if __name__ == "__main__":
     load_dotenv()
-    # print(get_products())
-    # load_image('https://www.zastavki.com/pictures/1600x1200/2009/Food_Pizza_Pizza_011915_.jpg')
-    # create_menu('menu.json')
-    # create_flow_fields('eba3d649-707d-4439-96ce-db0082dc2df0', 'Pizza Address', 'Pizza Alias', 'Longitude', 'Latitude')
-    # create_entries_from_json('addresses.json')
-    # print(create_flow('Адреса покупателей', 'Адреса наших покупателей, координаты геопозиции'))
-    # create_flow_fields('577c36c1-6727-475c-8de2-84e3a035105c', 'Order', 'Customer name', 'Longitude', 'Latitude')
-    # print(create_customer_entry(1, 2, 3, 4))
-    # print(get_all_entries('adresa-pokupatelej'))

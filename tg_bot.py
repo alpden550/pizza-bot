@@ -1,19 +1,19 @@
+import json
+import logging
 import os
 from operator import itemgetter
-from dotenv import load_dotenv
+
 import redis
-import logging
-import json
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram import ParseMode
-from telegram.ext import Filters, Updater
-from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler, PreCheckoutQueryHandler
-from telegram import LabeledPrice
-from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from dotenv import load_dotenv
+from geopy import Point, distance
+from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
+                      KeyboardButton, LabeledPrice, ParseMode,
+                      ReplyKeyboardMarkup, ReplyKeyboardRemove)
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler, PreCheckoutQueryHandler, Updater)
 from yandex_geocoder import Client
 from yandex_geocoder.exceptions import YandexGeocoderAddressNotFound
-from geopy import distance
-from geopy import Point
+
 import moltin
 
 
