@@ -72,16 +72,16 @@ def create_chunks(products, size=7):
         yield products[i:i + size]
 
 
-def send_order_ro_deliverer(bot, order_id, deliverer, longitude, latitude):
+def send_order_ro_deliverer(context, order_id, deliverer, longitude, latitude):
     order_text = 'Офомлен заказ на:\n\n'
     order_text += moltin.format_basket_for_sending(order_id)
     order_text += '\n\nКоординаты клиента:'
-    bot.send_message(
+    context.bot.send_message(
         chat_id=deliverer,
         text=order_text,
         parse_mode=ParseMode.MARKDOWN
     )
-    bot.send_location(
+    context.bot.send_location(
         chat_id=deliverer,
         longitude=longitude,
         latitude=latitude,
@@ -154,7 +154,7 @@ def create_delivery_buttons(distance):
     return InlineKeyboardMarkup(keyboard)
 
 
-def start(bot, update):
+def start(update, context):
     chat_id = update.message.chat_id
     keyboard = create_menu_buttons(chunk=0)
 
@@ -162,7 +162,7 @@ def start(bot, update):
     user_data['last_chunk'] = 0
     db.set(chat_id, json.dumps(user_data))
 
-    bot.send_message(
+    context.bot.send_message(
         chat_id=chat_id,
         text='_Пожалуйста, выберите пиццу или много пицц :):_',
         reply_markup=keyboard,
@@ -170,7 +170,7 @@ def start(bot, update):
     return 'HANDLE_MENU'
 
 
-def handle_button(bot, update):
+def handle_button(update, context):
     query = update.callback_query
     chat_id = query.message.chat_id
     message_id = query.message.message_id
@@ -181,33 +181,33 @@ def handle_button(bot, update):
     if query.data == 'basket':
         keyboard = create_basket_buttons(user_id=chat_id)
         message = moltin.format_basket_for_sending(chat_id)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
     elif query.data == 'prev':
         keyboard = create_menu_buttons(chunk=chunk - 1)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN)
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         user_data['last_chunk'] -= 1
         db.set(chat_id, json.dumps(user_data))
         return 'HANDLE_MENU'
     elif query.data == 'next':
         keyboard = create_menu_buttons(chunk=chunk + 1)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN)
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         user_data['last_chunk'] += 1
         db.set(chat_id, json.dumps(user_data))
         return 'HANDLE_MENU'
@@ -228,19 +228,19 @@ def handle_button(bot, update):
         db.set(chat_id, json.dumps(user_data))
 
         message = f'*{pizza_name}*\n\n{pizza_text}\n\n_Цена {pizza_price}_\n\n{basket_message}'
-        bot.send_photo(
+        context.bot.send_photo(
             chat_id=chat_id,
             photo=image_url,
             caption=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
 
     return 'HANDLE_DESCRIPTION'
 
 
-def handle_description(bot, update):
+def handle_description(update, context):
     query = update.callback_query
     chat_id = query.message.chat_id
     message_id = query.message.message_id
@@ -252,81 +252,81 @@ def handle_description(bot, update):
         user_data = json.loads(db.get(chat_id))
         chunk = user_data['last_chunk']
         keyboard = create_menu_buttons(chunk=chunk)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_MENU'
     elif query.data == 'basket':
         keyboard = create_basket_buttons(user_id=chat_id)
         message = moltin.format_basket_for_sending(chat_id)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
     elif query.data.split()[0] == 'cart':
         quantity = int(query.data.split()[1])
         moltin.put_in_cart(chat_id, product_id, quantity)
-        bot.answer_callback_query(
+        context.bot.answer_callback_query(
             callback_query_id=query.id,
             text='Добавили в корзину!',
         )
         return 'HANDLE_DESCRIPTION'
 
 
-def handle_basket(bot, update):
+def handle_basket(update, context):
     query = update.callback_query
     chat_id = query.message.chat_id
     message_id = query.message.message_id
 
     if query.data == 'back_to_menu':
         keyboard = create_menu_buttons(chunk=0)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_MENU'
     elif query.data == 'sell':
         location_keyboard = KeyboardButton(
             text='Отправить свою геолокацию', request_location=True)
         custom_keyboard = [[location_keyboard]]
         reply_markup = ReplyKeyboardMarkup(custom_keyboard)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text='Отправить геолокацию можно только с телефона',
             reply_markup=reply_markup
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'WAITING_GEO'
     else:
         moltin.delete_item_in_cart(chat_id, query.data)
         message = moltin.format_basket_for_sending(chat_id)
         keyboard = create_basket_buttons(user_id=chat_id)
-        bot.answer_callback_query(
+        context.bot.answer_callback_query(
             callback_query_id=query.id,
             text='Удалили из корзины!',
         )
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
 
 
-def handle_waiting(bot, update):
+def handle_waiting(update, context):
     message = update.message
     chat_id = message.chat_id
     if message.text:
@@ -344,7 +344,7 @@ def handle_waiting(bot, update):
         update.message.reply_text(text='Данные приняты, спасибо.',
                                   reply_markup=ReplyKeyboardRemove())
         keyboard = create_delivery_buttons(distance)
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
@@ -356,7 +356,7 @@ def handle_waiting(bot, update):
         return 'WAITING_CHOOSING'
 
 
-def handle_delivery_choosing(bot, update):
+def handle_delivery_choosing(update, context):
     query = update.callback_query
     chat_id = query.message.chat_id
     message_id = query.message.message_id
@@ -371,37 +371,37 @@ def handle_delivery_choosing(bot, update):
     customer_longitude, customer_latitude = customer_geo
 
     if query.data == 'pickup':
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text=f'Отлично! Вы можете забрать ваш заказ в ресторане {pizzeria_name} по адресу: {pizzeria_address}\n\nУдачного дня и заходите еще!'
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         moltin.create_customer_entry(chat_id, pizzeria_name, customer_longitude, customer_latitude)
 
     elif query.data == 'delivery':
-        bot.send_message(
+        context.bot.send_message(
             chat_id=chat_id,
             text=f'Ваш заказ принят, ожидаем оплату.',
         )
-        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
+        context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         moltin.create_customer_entry(chat_id, user_name, customer_longitude, customer_latitude)
         deliverer = moltin.get_deliverer(pizzeria_id)
-        send_order_ro_deliverer(bot, chat_id, deliverer, customer_longitude, customer_latitude)
+        send_order_ro_deliverer(context, chat_id, deliverer, customer_longitude, customer_latitude)
 
-        create_invoice(bot, chat_id=chat_id)
+        create_invoice(context, chat_id=chat_id)
         job_queue.run_once(remind_about_order, 3600, context=chat_id)
 
 
-def remind_about_order(bot, job):
+def remind_about_order(context):
     message = 'Приятного аппетита!\n\n'
     message += 'Но если заказ не пришел в течении этого часа, следующий заказ за наш счет:('
-    bot.send_message(
-        chat_id=job.context,
+    context.bot.send_message(
+        chat_id=context.job.context,
         text=message
     )
 
 
-def create_invoice(bot, chat_id):
+def create_invoice(context, chat_id):
     user_total = moltin.get_total(chat_id)
     amount = int(user_total.split()[0].split('.')[0])
     title = "Оплата заказа"
@@ -411,30 +411,30 @@ def create_invoice(bot, chat_id):
     start_parameter = 'payment'
     currency = "RUB"
     prices = [LabeledPrice("Оплатить заказ", amount * 100)]
-    bot.sendInvoice(
+    context.bot.sendInvoice(
         chat_id, title, description, payload,
         provider_token, start_parameter, currency, prices)
 
 
-def handle_invoice(bot, update):
+def handle_invoice(update, context):
     payload = os.getenv('PAYMENT_PAYLOAD')
     query = update.pre_checkout_query
     if query.invoice_payload != payload:
-        bot.answer_pre_checkout_query(
+        context.bot.answer_pre_checkout_query(
             pre_checkout_query_id=query.id,
             ok=False,
             error_message='Что-то пошло не так...')
     else:
-        bot.answer_pre_checkout_query(
+        context.bot.answer_pre_checkout_query(
             pre_checkout_query_id=query.id,
             ok=True)
 
 
-def handle_successful_payment(bot, update):
+def handle_successful_payment(update, context):
     update.message.reply_text("Спасибо, мы получили ваш платеж!")
 
 
-def handle_users_reply(bot, update):
+def handle_users_reply(update, context):
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -461,7 +461,7 @@ def handle_users_reply(bot, update):
 
     state_handler = states_functions[user_state]
     try:
-        next_state = state_handler(bot, update)
+        next_state = state_handler(update, context)
     except Exception as error:
         logging.error(error)
         next_state = None
@@ -485,14 +485,14 @@ if __name__ == "__main__":
     global db
     db = get_database()
 
-    updater = Updater(tg_token)
+    updater = Updater(tg_token, use_context=True)
     dispatcher = updater.dispatcher
     job_queue = updater.job_queue
 
     dispatcher.add_handler(CommandHandler('start', handle_users_reply))
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
-    dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
-    dispatcher.add_handler(MessageHandler(Filters.location, handle_users_reply))
+    dispatcher.add_handler(MessageHandler(Filters.text | Filters.location, handle_users_reply))
+
     dispatcher.add_handler(PreCheckoutQueryHandler(handle_invoice))
     dispatcher.add_handler(MessageHandler(Filters.successful_payment, handle_successful_payment))
 
