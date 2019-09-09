@@ -123,9 +123,8 @@ def create_menu(file):
 
 
 @headers_wrapper
-def create_flow(headers, name, description):
+def create_flow(headers, name, slug, description):
     url = f'{MOLTIN_URL}flows'
-    slug = '-'.join(translit(name, reversed=True).lower().split())
     data = {
         'data': {
             'type': 'flow',
@@ -141,17 +140,16 @@ def create_flow(headers, name, description):
 
 
 @headers_wrapper
-def create_flow_fields(headers, flow_id, *args):
+def create_flow_fields(headers, flow_id, fields_dict):
     url = f'{MOLTIN_URL}fields'
-    for field in args:
-        slug = '-'.join(field.lower().split())
+    for name, slug in fields_dict.items():
         data = {
             'data': {
                 'type': 'field',
-                'name': field,
+                'name': name,
                 'slug': slug,
                 'field_type': 'string',
-                'description': f'Field for {field}',
+                'description': f'Field for {name}',
                 'required': False,
                 'enabled': True,
                 'unique': True,
@@ -173,14 +171,14 @@ def create_flow_fields(headers, flow_id, *args):
 
 
 @headers_wrapper
-def create_pizzeria_entry(headers, address, allias, longitude, latitude, flow_slug='nashi-pitstserii'):
+def create_pizzeria_entry(headers, address, alias, longitude, latitude, flow_slug='pizzerias'):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries'
 
     data = {
         'data': {
             'type': 'entry',
             'pizza-address': address,
-            'pizza-alias': allias,
+            'pizza-alias': alias,
             'longitude': longitude,
             'latitude': latitude,
         }
@@ -191,7 +189,7 @@ def create_pizzeria_entry(headers, address, allias, longitude, latitude, flow_sl
 
 
 @headers_wrapper
-def create_customer_entry(headers, order_id, customer_name, longitude, latitude, flow_slug='adresa-pokupatelej'):
+def create_customer_entry(headers, order_id, customer_name, longitude, latitude, flow_slug='addresses'):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries'
     data = {
         'data': {
@@ -220,9 +218,9 @@ def create_pizzaries_from_json(file):
     for pizzeria in pizzerias:
         try:
             create_pizzeria_entry(
-                flow_slug='nashi-pitstserii',
+                flow_slug='pizzerias',
                 addresses=pizzeria.get('address').get('full'),
-                allias=pizzeria.get('alias'),
+                alias=pizzeria.get('alias'),
                 longitude=pizzeria.get('coordinates').get('lon'),
                 latitude=pizzeria.get('coordinates').get('lat')
             )
@@ -352,7 +350,7 @@ def get_all_entries(headers, flow_slug):
 
 
 @headers_wrapper
-def get_deliverer(headers, entry_id, flow_slug='nashi-pitstserii'):
+def get_deliverer(headers, entry_id, flow_slug='pizzerias'):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries/{entry_id}'
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
@@ -360,7 +358,7 @@ def get_deliverer(headers, entry_id, flow_slug='nashi-pitstserii'):
 
 
 @headers_wrapper
-def get_customer_coordinates(headers, entry_id, flow_slug='adresa-pokupatelej'):
+def get_customer_coordinates(headers, entry_id, flow_slug='addresses'):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries/{entry_id}'
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
@@ -372,7 +370,6 @@ if __name__ == "__main__":
     # print(get_products())
     # load_image('https://www.zastavki.com/pictures/1600x1200/2009/Food_Pizza_Pizza_011915_.jpg')
     # create_menu('menu.json')
-    # print(create_flow('Наши пиццерии', 'Наши поезда самые поездатые поезда!'))
     # create_flow_fields('eba3d649-707d-4439-96ce-db0082dc2df0', 'Pizza Address', 'Pizza Alias', 'Longitude', 'Latitude')
     # create_entries_from_json('addresses.json')
     # print(create_flow('Адреса покупателей', 'Адреса наших покупателей, координаты геопозиции'))
