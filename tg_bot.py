@@ -72,13 +72,6 @@ def create_chunks(products, size=7):
         yield products[i:i + size]
 
 
-def delete_message(bot, chat_id, message_id):
-    bot.deleteMessage(
-        chat_id=chat_id,
-        message_id=message_id
-    )
-
-
 def send_order_ro_deliverer(bot, order_id, deliverer, longitude, latitude):
     order_text = 'Офомлен заказ на:\n\n'
     order_text += moltin.format_basket_for_sending(order_id)
@@ -188,33 +181,33 @@ def handle_button(bot, update):
     if query.data == 'basket':
         keyboard = create_basket_buttons(user_id=chat_id)
         message = moltin.format_basket_for_sending(chat_id)
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
     elif query.data == 'prev':
         keyboard = create_menu_buttons(chunk=chunk - 1)
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN)
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         user_data['last_chunk'] -= 1
         db.set(chat_id, json.dumps(user_data))
         return 'HANDLE_MENU'
     elif query.data == 'next':
         keyboard = create_menu_buttons(chunk=chunk + 1)
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN)
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         user_data['last_chunk'] += 1
         db.set(chat_id, json.dumps(user_data))
         return 'HANDLE_MENU'
@@ -235,7 +228,6 @@ def handle_button(bot, update):
         db.set(chat_id, json.dumps(user_data))
 
         message = f'*{pizza_name}*\n\n{pizza_text}\n\n_Цена {pizza_price}_\n\n{basket_message}'
-        delete_message(bot, chat_id, message_id)
         bot.send_photo(
             chat_id=chat_id,
             photo=image_url,
@@ -243,6 +235,7 @@ def handle_button(bot, update):
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
 
     return 'HANDLE_DESCRIPTION'
 
@@ -259,24 +252,24 @@ def handle_description(bot, update):
         user_data = json.loads(db.get(chat_id))
         chunk = user_data['last_chunk']
         keyboard = create_menu_buttons(chunk=chunk)
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_MENU'
     elif query.data == 'basket':
         keyboard = create_basket_buttons(user_id=chat_id)
         message = moltin.format_basket_for_sending(chat_id)
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
     elif query.data.split()[0] == 'cart':
         quantity = int(query.data.split()[1])
@@ -295,16 +288,15 @@ def handle_basket(bot, update):
 
     if query.data == 'back_to_menu':
         keyboard = create_menu_buttons(chunk=0)
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_MENU'
     elif query.data == 'sell':
-        delete_message(bot, chat_id, message_id)
         location_keyboard = KeyboardButton(
             text='Отправить свою геолокацию', request_location=True)
         custom_keyboard = [[location_keyboard]]
@@ -314,6 +306,7 @@ def handle_basket(bot, update):
             text='Отправить геолокацию можно только с телефона',
             reply_markup=reply_markup
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'WAITING_GEO'
     else:
         moltin.delete_item_in_cart(chat_id, query.data)
@@ -323,13 +316,13 @@ def handle_basket(bot, update):
             callback_query_id=query.id,
             text='Удалили из корзины!',
         )
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
             parse_mode=ParseMode.MARKDOWN
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
 
 
@@ -378,19 +371,19 @@ def handle_delivery_choosing(bot, update):
     cus_longitude, cus_latitude = customer_geo
 
     if query.data == 'pickup':
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text=f'Отлично! Вы можете забрать ваш заказ в ресторане {p_name} по адресу: {p_address}\n\nУдачного дня и заходите еще!'
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         moltin.create_customer_entry(chat_id, p_name, cus_longitude, cus_latitude)
 
     elif query.data == 'delivery':
-        delete_message(bot, chat_id, message_id)
         bot.send_message(
             chat_id=chat_id,
             text=f'Ваш заказ принят, ожидаем оплату.',
         )
+        bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         customer_id = moltin.create_customer_entry(chat_id, user_name, cus_longitude, cus_latitude)
         deliverer = moltin.get_deliverer(p_id)
         longitude, latitude = moltin.get_customer_coordinates(customer_id)
