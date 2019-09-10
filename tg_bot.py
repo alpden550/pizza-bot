@@ -6,11 +6,23 @@ from operator import itemgetter
 import redis
 from dotenv import load_dotenv
 from geopy import Point, distance
-from telegram import (InlineKeyboardButton, InlineKeyboardMarkup,
-                      KeyboardButton, LabeledPrice, ParseMode,
-                      ReplyKeyboardMarkup, ReplyKeyboardRemove)
-from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
-                          MessageHandler, PreCheckoutQueryHandler, Updater)
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    LabeledPrice,
+    ParseMode,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+)
+from telegram.ext import (
+    CallbackQueryHandler,
+    CommandHandler,
+    Filters,
+    MessageHandler,
+    PreCheckoutQueryHandler,
+    Updater,
+)
 from yandex_geocoder import Client
 from yandex_geocoder.exceptions import YandexGeocoderAddressNotFound
 
@@ -22,7 +34,11 @@ def get_database():
     db_port = os.getenv('REDIS_PORT')
     db_password = os.getenv('REDIS_PASSWORD')
     database = redis.Redis(
-        host=db_url, port=db_port, password=db_password, charset='utf-8', decode_responses=True
+        host=db_url,
+        port=db_port,
+        password=db_password,
+        charset='utf-8',
+        decode_responses=True,
     )
     return database
 
@@ -69,7 +85,7 @@ def calculate_distance_for_message(pizzeria):
 
 def create_chunks(products, size=7):
     for i in range(0, len(products), size):
-        yield products[i:i + size]
+        yield products[i: i + size]
 
 
 def send_order_to_deliverer(context, order_id, deliverer, longitude, latitude):
@@ -77,15 +93,9 @@ def send_order_to_deliverer(context, order_id, deliverer, longitude, latitude):
     order_text += moltin.format_basket_for_sending(order_id)
     order_text += '\n\nКоординаты клиента:'
     context.bot.send_message(
-        chat_id=deliverer,
-        text=order_text,
-        parse_mode=ParseMode.MARKDOWN
+        chat_id=deliverer, text=order_text, parse_mode=ParseMode.MARKDOWN
     )
-    context.bot.send_location(
-        chat_id=deliverer,
-        longitude=longitude,
-        latitude=latitude,
-    )
+    context.bot.send_location(chat_id=deliverer, longitude=longitude, latitude=latitude)
 
 
 def create_menu_buttons(chunk):
@@ -94,35 +104,34 @@ def create_menu_buttons(chunk):
     last_chunk = len(chunks) - 1
 
     keyboard = [
-        [InlineKeyboardButton(pr_name, callback_data=pr_id)] for pr_id, pr_name in chunks[chunk]
+        [InlineKeyboardButton(pr_name, callback_data=pr_id)]
+        for pr_id, pr_name in chunks[chunk]
     ]
     if chunk == 0:
-        keyboard.append([InlineKeyboardButton(
-            "Следующие", callback_data='next')])
+        keyboard.append([InlineKeyboardButton("Следующие", callback_data='next')])
     elif chunk == last_chunk:
-        keyboard.append([InlineKeyboardButton(
-            "Предыдущие", callback_data='prev')])
+        keyboard.append([InlineKeyboardButton("Предыдущие", callback_data='prev')])
     else:
-        keyboard.append([
-            InlineKeyboardButton("Предыдущие", callback_data='prev'),
-            InlineKeyboardButton("Следующие", callback_data='next')])
+        keyboard.append(
+            [
+                InlineKeyboardButton("Предыдущие", callback_data='prev'),
+                InlineKeyboardButton("Следующие", callback_data='next'),
+            ]
+        )
 
     keyboard.append([InlineKeyboardButton("Корзина", callback_data='basket')])
     return InlineKeyboardMarkup(keyboard)
 
 
 def create_description_buttons():
-    buttons_list = [
-        ['1 шт', 'cart 1'],
-        ['3 шт', 'cart 3'],
-        ['5 шт', 'cart 5'],
-    ]
+    buttons_list = [['1 шт', 'cart 1'], ['3 шт', 'cart 3'], ['5 шт', 'cart 5']]
     keyboard = [
-        [InlineKeyboardButton(button_name, callback_data=button_id)
-         for button_name, button_id in buttons_list]
+        [
+            InlineKeyboardButton(button_name, callback_data=button_id)
+            for button_name, button_id in buttons_list
+        ]
     ]
-    keyboard.append([InlineKeyboardButton(
-        'Назад', callback_data='back_to_menu')])
+    keyboard.append([InlineKeyboardButton('Назад', callback_data='back_to_menu')])
     keyboard.append([InlineKeyboardButton("Корзина", callback_data='basket')])
 
     return InlineKeyboardMarkup(keyboard)
@@ -134,20 +143,23 @@ def create_basket_buttons(user_id=None):
     for product in user_basket:
         pr_name = product['name']
         pr_id = product['cart_id']
-        keyboard.append([InlineKeyboardButton(
-            f'Удалить {pr_name}', callback_data=pr_id)])
-    keyboard.append([InlineKeyboardButton(
-        "Назад в меню", callback_data='back_to_menu')])
-    keyboard.append([InlineKeyboardButton(
-        "Оформить заказ", callback_data='sell')])
+        keyboard.append(
+            [InlineKeyboardButton(f'Удалить {pr_name}', callback_data=pr_id)]
+        )
+    keyboard.append(
+        [InlineKeyboardButton("Назад в меню", callback_data='back_to_menu')]
+    )
+    keyboard.append([InlineKeyboardButton("Оформить заказ", callback_data='sell')])
     return InlineKeyboardMarkup(keyboard)
 
 
 def create_delivery_buttons(distance):
     if distance <= 20:
         keyboard = [
-            [InlineKeyboardButton('Доставка', callback_data='delivery'),
-             InlineKeyboardButton('Самовывоз', callback_data='pickup')]
+            [
+                InlineKeyboardButton('Доставка', callback_data='delivery'),
+                InlineKeyboardButton('Самовывоз', callback_data='pickup'),
+            ]
         ]
     else:
         keyboard = [[InlineKeyboardButton('Самовывоз', callback_data='pickup')]]
@@ -166,7 +178,8 @@ def start(update, context):
         chat_id=chat_id,
         text='_Пожалуйста, выберите пиццу или много пицц :):_',
         reply_markup=keyboard,
-        parse_mode=ParseMode.MARKDOWN)
+        parse_mode=ParseMode.MARKDOWN,
+    )
     return 'HANDLE_MENU'
 
 
@@ -185,7 +198,7 @@ def handle_button(update, context):
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
@@ -195,7 +208,8 @@ def handle_button(update, context):
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN)
+            parse_mode=ParseMode.MARKDOWN,
+        )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         user_data['last_chunk'] -= 1
         db.set(chat_id, json.dumps(user_data))
@@ -206,7 +220,8 @@ def handle_button(update, context):
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN)
+            parse_mode=ParseMode.MARKDOWN,
+        )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         user_data['last_chunk'] += 1
         db.set(chat_id, json.dumps(user_data))
@@ -218,8 +233,7 @@ def handle_button(update, context):
         pizza_price = pizza_data['meta']['display_price']['with_tax']['formatted']
         image_id = pizza_data['relationships']['main_image']['data']['id']
         image_url = moltin.get_picture(image_id)
-        basket_message = moltin.check_product_in_cart(
-            chat_id, query.data) or ''
+        basket_message = moltin.check_product_in_cart(chat_id, query.data) or ''
 
         keyboard = create_description_buttons()
 
@@ -233,7 +247,7 @@ def handle_button(update, context):
             photo=image_url,
             caption=message,
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
 
@@ -256,7 +270,7 @@ def handle_description(update, context):
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_MENU'
@@ -267,7 +281,7 @@ def handle_description(update, context):
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
@@ -275,8 +289,7 @@ def handle_description(update, context):
         quantity = int(query.data.split()[1])
         moltin.put_in_cart(chat_id, product_id, quantity)
         context.bot.answer_callback_query(
-            callback_query_id=query.id,
-            text='Добавили в корзину!',
+            callback_query_id=query.id, text='Добавили в корзину!'
         )
         return 'HANDLE_DESCRIPTION'
 
@@ -292,19 +305,20 @@ def handle_basket(update, context):
             chat_id=chat_id,
             text='_Пожалуйста, выберите пиццу или много пицц :):_',
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_MENU'
     elif query.data == 'sell':
         location_keyboard = KeyboardButton(
-            text='Отправить свою геолокацию', request_location=True)
+            text='Отправить свою геолокацию', request_location=True
+        )
         custom_keyboard = [[location_keyboard]]
         reply_markup = ReplyKeyboardMarkup(custom_keyboard)
         context.bot.send_message(
             chat_id=chat_id,
             text='Отправить геолокацию можно только с телефона',
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'WAITING_GEO'
@@ -313,14 +327,13 @@ def handle_basket(update, context):
         message = moltin.format_basket_for_sending(chat_id)
         keyboard = create_basket_buttons(user_id=chat_id)
         context.bot.answer_callback_query(
-            callback_query_id=query.id,
-            text='Удалили из корзины!',
+            callback_query_id=query.id, text='Удалили из корзины!'
         )
         context.bot.send_message(
             chat_id=chat_id,
             text=message,
             reply_markup=keyboard,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         return 'HANDLE_BASKET'
@@ -335,7 +348,8 @@ def handle_waiting(update, context):
         except YandexGeocoderAddressNotFound as error:
             logging.error(error)
             update.message.reply_text(
-                text='Не смогли определить адресс, попробуйте еще.')
+                text='Не смогли определить адресс, попробуйте еще.'
+            )
             current_pos = None
     else:
         current_pos = (message.location.longitude, message.location.latitude)
@@ -345,14 +359,11 @@ def handle_waiting(update, context):
 
     closest_pizzeria = get_closest_pizzeria(current_pos)
     message, distance = calculate_distance_for_message(closest_pizzeria)
-    update.message.reply_text(text='Данные приняты, спасибо.',
-                              reply_markup=ReplyKeyboardRemove())
-    keyboard = create_delivery_buttons(distance)
-    context.bot.send_message(
-        chat_id=chat_id,
-        text=message,
-        reply_markup=keyboard,
+    update.message.reply_text(
+        text='Данные приняты, спасибо.', reply_markup=ReplyKeyboardRemove()
     )
+    keyboard = create_delivery_buttons(distance)
+    context.bot.send_message(chat_id=chat_id, text=message, reply_markup=keyboard)
     user_data = json.loads(db.get(chat_id))
     user_data['closest_pizzeria'] = closest_pizzeria
     user_data['customer_geo'] = current_pos
@@ -377,20 +388,25 @@ def handle_delivery_choosing(update, context):
     if query.data == 'pickup':
         context.bot.send_message(
             chat_id=chat_id,
-            text=f'Отлично! Вы можете забрать ваш заказ в ресторане {pizzeria_name} по адресу: {pizzeria_address}\n\nУдачного дня и заходите еще!'
+            text=f'Отлично! Вы можете забрать ваш заказ в ресторане {pizzeria_name} по адресу: {pizzeria_address}\n\nУдачного дня и заходите еще!',
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-        moltin.create_customer_entry(chat_id, pizzeria_name, customer_longitude, customer_latitude)
+        moltin.create_customer_entry(
+            chat_id, pizzeria_name, customer_longitude, customer_latitude
+        )
 
     elif query.data == 'delivery':
         context.bot.send_message(
-            chat_id=chat_id,
-            text=f'Ваш заказ принят, ожидаем оплату.',
+            chat_id=chat_id, text=f'Ваш заказ принят, ожидаем оплату.'
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-        moltin.create_customer_entry(chat_id, user_name, customer_longitude, customer_latitude)
+        moltin.create_customer_entry(
+            chat_id, user_name, customer_longitude, customer_latitude
+        )
         deliverer = moltin.get_deliverer(pizzeria_id)
-        send_order_to_deliverer(context, chat_id, deliverer, customer_longitude, customer_latitude)
+        send_order_to_deliverer(
+            context, chat_id, deliverer, customer_longitude, customer_latitude
+        )
 
         create_invoice(context, chat_id=chat_id)
         job_queue.run_once(remind_about_order, 3600, context=chat_id)
@@ -398,11 +414,10 @@ def handle_delivery_choosing(update, context):
 
 def remind_about_order(context):
     message = 'Приятного аппетита!\n\n'
-    message += 'Но если заказ не пришел в течении этого часа, следующий заказ за наш счет:('
-    context.bot.send_message(
-        chat_id=context.job.context,
-        text=message
+    message += (
+        'Но если заказ не пришел в течении этого часа, следующий заказ за наш счет:('
     )
+    context.bot.send_message(chat_id=context.job.context, text=message)
 
 
 def create_invoice(context, chat_id):
@@ -416,8 +431,15 @@ def create_invoice(context, chat_id):
     currency = "RUB"
     prices = [LabeledPrice("Оплатить заказ", amount * 100)]
     context.bot.sendInvoice(
-        chat_id, title, description, payload,
-        provider_token, start_parameter, currency, prices)
+        chat_id,
+        title,
+        description,
+        payload,
+        provider_token,
+        start_parameter,
+        currency,
+        prices,
+    )
 
 
 def handle_invoice(update, context):
@@ -427,11 +449,10 @@ def handle_invoice(update, context):
         context.bot.answer_pre_checkout_query(
             pre_checkout_query_id=query.id,
             ok=False,
-            error_message='Что-то пошло не так...')
+            error_message='Что-то пошло не так...',
+        )
     else:
-        context.bot.answer_pre_checkout_query(
-            pre_checkout_query_id=query.id,
-            ok=True)
+        context.bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
 
 
 def handle_successful_payment(update, context):
@@ -476,9 +497,7 @@ def handle_users_reply(update, context):
             user_data = json.loads(user)
             user_data['state'] = next_state
         else:
-            user_data = {
-                'state': next_state,
-            }
+            user_data = {'state': next_state}
         db.set(chat_id, json.dumps(user_data))
 
 
@@ -495,10 +514,14 @@ if __name__ == "__main__":
 
     dispatcher.add_handler(CommandHandler('start', handle_users_reply))
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
-    dispatcher.add_handler(MessageHandler(Filters.text | Filters.location, handle_users_reply))
+    dispatcher.add_handler(
+        MessageHandler(Filters.text | Filters.location, handle_users_reply)
+    )
 
     dispatcher.add_handler(PreCheckoutQueryHandler(handle_invoice))
-    dispatcher.add_handler(MessageHandler(Filters.successful_payment, handle_successful_payment))
+    dispatcher.add_handler(
+        MessageHandler(Filters.successful_payment, handle_successful_payment)
+    )
 
     updater.start_polling()
     updater.idle()

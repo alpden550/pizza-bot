@@ -19,7 +19,6 @@ def open_json(file):
 
 
 def headers_wrapper(func):
-
     @wraps(func)
     def inner(*args, **kwargs):
         url = 'https://api.moltin.com/oauth/access_token'
@@ -31,10 +30,9 @@ def headers_wrapper(func):
         response = requests.get(url, data=data)
         response.raise_for_status()
         token = response.json().get('access_token')
-        headers = {
-            'Authorization': f'Bearer {token}',
-        }
+        headers = {'Authorization': f'Bearer {token}'}
         return func(headers, *args, **kwargs)
+
     return inner
 
 
@@ -51,15 +49,12 @@ def create_product(headers, name, description, price):
             'description': description,
             'manage_stock': False,
             'price': [
-                {
-                    'amount': int(f'{price}00'),
-                    'currency': 'RUB',
-                    'includes_tax': True,
-                }
+                {'amount': int(f'{price}00'), 'currency': 'RUB', 'includes_tax': True}
             ],
             'status': 'live',
             'commodity_type': 'physical',
-        }}
+        }
+    }
     response = requests.post(url=url, headers=headers, json=data)
     response.raise_for_status()
     return response.json()['data']['id']
@@ -70,9 +65,7 @@ def load_image(headers, image_url):
     url = f'{MOLTIN_URL}files'
     image_name = image_url.split('/')[-1]
     image_content = BytesIO(requests.get(image_url).content)
-    files = {
-        'file': (image_name, image_content)
-    }
+    files = {'file': (image_name, image_content)}
     response = requests.post(url=url, headers=headers, files=files)
     image_content.close()
     response.raise_for_status()
@@ -82,12 +75,7 @@ def load_image(headers, image_url):
 @headers_wrapper
 def attach_image(headers, product_id, image_id):
     url = f'{MOLTIN_URL}products/{product_id}/relationships/main-image'
-    data = {
-        'data': {
-            'type': 'main_image',
-            'id': image_id,
-        }
-    }
+    data = {'data': {'type': 'main_image', 'id': image_id}}
     response = requests.post(url=url, headers=headers, json=data)
     response.raise_for_status()
 
@@ -115,10 +103,7 @@ def create_menu(file):
             price = pizza['price']
             image = pizza['product_image']['url']
             create_full_product(
-                name=name,
-                description=description,
-                price=price,
-                image=image
+                name=name, description=description, price=price, image=image
             )
         except requests.HTTPError as error:
             logging.error(error)
@@ -155,14 +140,7 @@ def create_flow_fields(headers, flow_id, fields_dict):
                 'required': False,
                 'enabled': True,
                 'unique': True,
-                'relationships': {
-                    'flow': {
-                        'data': {
-                            'type': 'flow',
-                            'id': flow_id
-                        }
-                    }
-                }
+                'relationships': {'flow': {'data': {'type': 'flow', 'id': flow_id}}},
             }
         }
         try:
@@ -173,7 +151,9 @@ def create_flow_fields(headers, flow_id, fields_dict):
 
 
 @headers_wrapper
-def create_pizzeria_entry(headers, address, alias, longitude, latitude, flow_slug='pizzerias'):
+def create_pizzeria_entry(
+    headers, address, alias, longitude, latitude, flow_slug='pizzerias'
+):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries'
 
     data = {
@@ -191,7 +171,9 @@ def create_pizzeria_entry(headers, address, alias, longitude, latitude, flow_slu
 
 
 @headers_wrapper
-def create_customer_entry(headers, order_id, customer_name, longitude, latitude, flow_slug='addresses'):
+def create_customer_entry(
+    headers, order_id, customer_name, longitude, latitude, flow_slug='addresses'
+):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries'
     data = {
         'data': {
@@ -224,7 +206,7 @@ def create_pizzaries_from_json(file):
                 addresses=pizzeria.get('address').get('full'),
                 alias=pizzeria.get('alias'),
                 longitude=pizzeria.get('coordinates').get('lon'),
-                latitude=pizzeria.get('coordinates').get('lat')
+                latitude=pizzeria.get('coordinates').get('lat'),
             )
         except requests.HTTPError as error:
             logging.error(error)
@@ -260,13 +242,7 @@ def get_picture(headers, product_id):
 @headers_wrapper
 def put_in_cart(headers, reference, product_id, quantity):
     url = f'{MOLTIN_URL}carts/{reference}/items'
-    data = {
-        'data': {
-            'id': product_id,
-            'type': 'cart_item',
-            'quantity': quantity,
-        }
-    }
+    data = {'data': {'id': product_id, 'type': 'cart_item', 'quantity': quantity}}
     response = requests.post(url=url, headers=headers, json=data)
     response.raise_for_status()
 
@@ -279,14 +255,20 @@ def get_cart(headers, reference):
 
     user_cart = []
     for product in response.json()['data']:
-        user_cart.append({
-            'cart_id': product['id'],
-            'product_id': product['product_id'],
-            'name': product['name'],
-            'quantity': product['quantity'],
-            'price': product['meta']['display_price']['with_tax']['unit']['formatted'],
-            'total': product['meta']['display_price']['with_tax']['value']['formatted']
-        })
+        user_cart.append(
+            {
+                'cart_id': product['id'],
+                'product_id': product['product_id'],
+                'name': product['name'],
+                'quantity': product['quantity'],
+                'price': product['meta']['display_price']['with_tax']['unit'][
+                    'formatted'
+                ],
+                'total': product['meta']['display_price']['with_tax']['value'][
+                    'formatted'
+                ],
+            }
+        )
     return user_cart
 
 
@@ -327,7 +309,7 @@ def create_customer(headers, user_id, user_email, user_name, user_surname=None):
         'data': {
             'type': 'customer',
             'name': f'{user_name} {user_surname}',
-            'email': user_email
+            'email': user_email,
         }
     }
 
@@ -364,7 +346,10 @@ def get_customer_coordinates(headers, entry_id, flow_slug='addresses'):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries/{entry_id}'
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
-    return float(response.json()['data']['longitude']), float(response.json()['data']['latitude'])
+    return (
+        float(response.json()['data']['longitude']),
+        float(response.json()['data']['latitude']),
+    )
 
 
 if __name__ == "__main__":
