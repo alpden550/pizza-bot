@@ -400,7 +400,7 @@ def handle_delivery_choosing(update, context):
             chat_id=chat_id, text=f'Ваш заказ принят, ожидаем оплату.'
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-        moltin.create_customer_entry(
+        user = moltin.create_customer_entry(
             chat_id, user_name, customer_longitude, customer_latitude
         )
         deliverer = moltin.get_deliverer(pizzeria_id)

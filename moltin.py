@@ -172,7 +172,7 @@ def create_pizzeria_entry(
 
 @headers_wrapper
 def create_customer_entry(
-    headers, order_id, customer_name, longitude, latitude, flow_slug='address'
+    headers, order_id, customer_name, longitude, latitude, flow_slug='adress'
 ):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries'
     data = {
@@ -342,7 +342,7 @@ def get_deliverer(headers, entry_id, flow_slug='pizzerias'):
 
 
 @headers_wrapper
-def get_customer_coordinates(headers, entry_id, flow_slug='address'):
+def get_customer_coordinates(headers, entry_id, flow_slug='adress'):
     url = f'{MOLTIN_URL}flows/{flow_slug}/entries/{entry_id}'
     response = requests.get(url=url, headers=headers)
     response.raise_for_status()
@@ -354,3 +354,10 @@ def get_customer_coordinates(headers, entry_id, flow_slug='address'):
 
 if __name__ == "__main__":
     load_dotenv()
+    # print(create_flow('Адреса покупателей', 'adress', 'Адреса'))
+    create_flow_fields('7121e714-3cc5-4885-9939-9a90d3afce2a',{
+        'order': 'order',
+        'customer-name': 'customer-name',
+        'longitude': 'longitude',
+        'latitude': 'latitude',
+    })
