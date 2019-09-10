@@ -72,7 +72,7 @@ def create_chunks(products, size=7):
         yield products[i:i + size]
 
 
-def send_order_ro_deliverer(context, order_id, deliverer, longitude, latitude):
+def send_order_to_deliverer(context, order_id, deliverer, longitude, latitude):
     order_text = 'Офомлен заказ на:\n\n'
     order_text += moltin.format_basket_for_sending(order_id)
     order_text += '\n\nКоординаты клиента:'
@@ -390,7 +390,7 @@ def handle_delivery_choosing(update, context):
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
         moltin.create_customer_entry(chat_id, user_name, customer_longitude, customer_latitude)
         deliverer = moltin.get_deliverer(pizzeria_id)
-        send_order_ro_deliverer(context, chat_id, deliverer, customer_longitude, customer_latitude)
+        send_order_to_deliverer(context, chat_id, deliverer, customer_longitude, customer_latitude)
 
         create_invoice(context, chat_id=chat_id)
         job_queue.run_once(remind_about_order, 3600, context=chat_id)

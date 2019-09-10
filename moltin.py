@@ -106,7 +106,7 @@ def create_menu(file):
         logging.error(error)
 
     if pizzas is None:
-        exit
+        return None
 
     for pizza in pizzas:
         try:
@@ -215,7 +215,7 @@ def create_pizzaries_from_json(file):
         logging.error(error)
 
     if pizzerias is None:
-        exit
+        return None
 
     for pizzeria in pizzerias:
         try:
