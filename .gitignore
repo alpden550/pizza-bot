@@ -125,3 +125,4 @@ dmypy.json
 .vscode/
 menu.json
 addresses.json
+.pre-commit-config.yaml
