@@ -150,7 +150,7 @@ def create_delivery_buttons(distance):
              InlineKeyboardButton('Самовывоз', callback_data='pickup')]
         ]
     else:
-        keyboard = [InlineKeyboardButton('Самовывоз', callback_data='pickup')]
+        keyboard = [[InlineKeyboardButton('Самовывоз', callback_data='pickup')]]
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -336,24 +336,28 @@ def handle_waiting(update, context):
             logging.error(error)
             update.message.reply_text(
                 text='Не смогли определить адресс, попробуйте еще.')
+            current_pos = None
     else:
         current_pos = (message.location.longitude, message.location.latitude)
-    if current_pos:
-        closest_pizzeria = get_closest_pizzeria(current_pos)
-        message, distance = calculate_distance_for_message(closest_pizzeria)
-        update.message.reply_text(text='Данные приняты, спасибо.',
-                                  reply_markup=ReplyKeyboardRemove())
-        keyboard = create_delivery_buttons(distance)
-        context.bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            reply_markup=keyboard,
-        )
-        user_data = json.loads(db.get(chat_id))
-        user_data['closest_pizzeria'] = closest_pizzeria
-        user_data['customer_geo'] = current_pos
-        db.set(chat_id, json.dumps(user_data))
-        return 'WAITING_CHOOSING'
+
+    if current_pos is None:
+        return 'WAITING_GEO'
+
+    closest_pizzeria = get_closest_pizzeria(current_pos)
+    message, distance = calculate_distance_for_message(closest_pizzeria)
+    update.message.reply_text(text='Данные приняты, спасибо.',
+                              reply_markup=ReplyKeyboardRemove())
+    keyboard = create_delivery_buttons(distance)
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=message,
+        reply_markup=keyboard,
+    )
+    user_data = json.loads(db.get(chat_id))
+    user_data['closest_pizzeria'] = closest_pizzeria
+    user_data['customer_geo'] = current_pos
+    db.set(chat_id, json.dumps(user_data))
+    return 'WAITING_CHOOSING'
 
 
 def handle_delivery_choosing(update, context):
