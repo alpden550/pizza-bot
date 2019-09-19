@@ -8,6 +8,7 @@ import requests
 
 from dotenv import load_dotenv
 from transliterate import translit
+from pprint import pprint
 
 MOLTIN_URL = 'https://api.moltin.com/v2/'
 
@@ -49,7 +50,8 @@ def create_product(headers, name, description, price):
             'description': description,
             'manage_stock': False,
             'price': [
-                {'amount': int(f'{price}00'), 'currency': 'RUB', 'includes_tax': True}
+                {'amount': int(f'{price}00'), 'currency': 'RUB',
+                 'includes_tax': True}
             ],
             'status': 'live',
             'commodity_type': 'physical',
@@ -352,12 +354,34 @@ def get_customer_coordinates(headers, entry_id, flow_slug='adress'):
     )
 
 
+@headers_wrapper
+def get_category_by_slug(headers, category_slug):
+    url = f'{MOLTIN_URL}categories'
+    params = {
+        'filter': f'eq(slug,{category_slug})'
+    }
+    response = requests.get(url=url, headers=headers, params=params)
+    response.raise_for_status()
+    products = response.json()['data'][0]['relationships']['products']['data']
+    return {
+        'name': response.json()['data'][0]['name'],
+        'slug': response.json()['data'][0]['slug'],
+        'products': [product['id'] for product in products]
+    }
+
+
+@headers_wrapper
+def get_all_categories(headers):
+    url = f'{MOLTIN_URL}categories'
+    response = requests.get(url=url, headers=headers)
+    categories = response.json()['data']
+    return [category['slug'] for category in categories]
+
+
 if __name__ == "__main__":
     load_dotenv()
-    # print(create_flow('Адреса покупателей', 'adress', 'Адреса'))
-    create_flow_fields('7121e714-3cc5-4885-9939-9a90d3afce2a',{
-        'order': 'order',
-        'customer-name': 'customer-name',
-        'longitude': 'longitude',
-        'latitude': 'latitude',
-    })
+    # pprint(get_category_by_slug('main'))
+    cart = get_cart('2397547040340425')
+    pprint(cart)
+    # item = delete_item_in_cart('2397547040340425', '43e51b26-d40f-4b3e-afa9-0fd9299a206e')
+    # print(item)

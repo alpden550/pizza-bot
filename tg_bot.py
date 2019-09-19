@@ -348,7 +348,7 @@ def handle_waiting(update, context):
         except YandexGeocoderAddressNotFound as error:
             logging.error(error)
             update.message.reply_text(
-                text='Не смогли определить адресс, попробуйте еще.'
+                text='Не смогли определить адрес, попробуйте еще.'
             )
             current_pos = None
     else:
