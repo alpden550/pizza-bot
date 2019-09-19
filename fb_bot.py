@@ -27,6 +27,7 @@ def headers_wrapper(func):
         params = {'access_token': FB_TOKEN}
         headers = {'Content-Type': 'application/json'}
         return func(headers, params, *args, **kwargs)
+
     return inner
 
 
@@ -49,7 +50,9 @@ def verify():
     '''
     При верификации вебхука у Facebook он отправит запрос на этот адрес. На него нужно ответить VERIFY_TOKEN.
     '''
-    if request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.challenge'):
+    if request.args.get('hub.mode') == 'subscribe' and request.args.get(
+        'hub.challenge'
+    ):
         if not request.args.get('hub.verify_token') == os.getenv('FB_VERIFY_TOKEN'):
             return 'Verification token mismatch', 403
         return request.args['hub.challenge'], 200
@@ -60,43 +63,36 @@ def verify():
 def create_category_menu(categories):
     buttons = []
     for category in categories:
-        category_data = json.loads(
-            db.get(category)) or moltin.get_category_by_slug(category)
+        category_data = json.loads(db.get(category)) or moltin.get_category_by_slug(
+            category
+        )
         name, slug = category_data['name'], category_data['slug']
-        buttons.append({
-            'type': 'postback',
-            'title': name,
-            'payload': slug
-        })
+        buttons.append({'type': 'postback', 'title': name, 'payload': slug})
     categories = {
         'title': 'Не нашли нужную пиццу?',
         'subtitle': 'Остальные пиццы можно посмотреть в наших категориях:',
         'image_url': CATEGORY_LOGO_URL,
-        'buttons': buttons
+        'buttons': buttons,
     }
     return categories
 
 
 def create_all_menu(category_slug='main'):
-    categories = json.loads(
-        db.get('categories')) or moltin.get_all_categories()
+    categories = json.loads(db.get('categories')) or moltin.get_all_categories()
     categories.remove(category_slug)
 
     menu_elements = [
-        {'title': 'Меню',
-         'subtitle': 'Вы можете выбрать одну, или много пицц',
-         'image_url': LOGO_URL,
-         'buttons': [{
-             'type': 'postback',
-             'title': 'Корзина',
-             'payload': 'basket',
-         },
-         ]
-         }
+        {
+            'title': 'Меню',
+            'subtitle': 'Вы можете выбрать одну, или много пицц',
+            'image_url': LOGO_URL,
+            'buttons': [{'type': 'postback', 'title': 'Корзина', 'payload': 'basket'}],
+        }
     ]
 
-    category = json.loads(db.get(category_slug)
-                          ) or moltin.get_category_by_slug(category_slug)
+    category = json.loads(db.get(category_slug)) or moltin.get_category_by_slug(
+        category_slug
+    )
     category_products = category['products']
     for product in category_products:
         pizza_data = json.loads(db.get(product)) or moltin.get_by_id(product)
@@ -109,11 +105,9 @@ def create_all_menu(category_slug='main'):
             'title': f'{pizza_name}, {pizza_price}',
             'subtitle': pizza_desc,
             'image_url': image_url,
-            'buttons': [{
-                'type': 'postback',
-                'title': 'Добавить в корзину!',
-                'payload': product
-            }]
+            'buttons': [
+                {'type': 'postback', 'title': 'Добавить в корзину!', 'payload': product}
+            ],
         }
         menu_elements.append(data)
     rest_categories = create_category_menu(categories)
@@ -123,17 +117,9 @@ def create_all_menu(category_slug='main'):
 
 @headers_wrapper
 def send_message(headers, params, recipient_id, message):
-    request_content = {
-        "recipient": {
-            "id": recipient_id
-        },
-        "message": {
-            "text": message
-        }
-    }
+    request_content = {"recipient": {"id": recipient_id}, "message": {"text": message}}
     response = requests.post(
-        url=FB_API,
-        params=params, headers=headers, json=request_content
+        url=FB_API, params=params, headers=headers, json=request_content
     )
     response.raise_for_status()
 
@@ -143,9 +129,7 @@ def send_main_menu(headers, params, recipient_id, message):
     menu_elements = create_all_menu(category_slug='main')
 
     request_content = {
-        'recipient': {
-            'id': recipient_id
-        },
+        'recipient': {'id': recipient_id},
         'message': {
             'attachment': {
                 'type': 'template',
@@ -153,13 +137,12 @@ def send_main_menu(headers, params, recipient_id, message):
                     'template_type': 'generic',
                     'image_aspect_ratio': 'square',
                     'elements': menu_elements,
-                }
+                },
             }
-        }
+        },
     }
     response = requests.post(
-        url=FB_API,
-        params=params, headers=headers, json=request_content
+        url=FB_API, params=params, headers=headers, json=request_content
     )
     response.raise_for_status()
     return 'HANDLE_MENU'
@@ -171,24 +154,22 @@ def create_basket_menu(headers, params, recipient_id):
     user_cart = moltin.get_cart(recipient_id)
 
     menu_elements = [
-        {'title': f'Ваш заказ на сумму: {total}',
-         'image_url': BASKET_IMG_URL,
-         'buttons': [{
-             'type': 'postback',
-             'title': 'Оформить заказ',
-             'payload': 'order',
-         },
-             {
-             'type': 'postback',
-             'title': 'Назад в меню',
-             'payload': 'back_to_menu',
-         }]
-         }
+        {
+            'title': f'Ваш заказ на сумму: {total}',
+            'image_url': BASKET_IMG_URL,
+            'buttons': [
+                {'type': 'postback', 'title': 'Оформить заказ', 'payload': 'order'},
+                {
+                    'type': 'postback',
+                    'title': 'Назад в меню',
+                    'payload': 'back_to_menu',
+                },
+            ],
+        }
     ]
     for product in user_cart:
         product_id = product['product_id']
-        pizza_data = json.loads(
-            db.get(product_id)) or moltin.get_by_id(product)
+        pizza_data = json.loads(db.get(product_id)) or moltin.get_by_id(product)
         pizza_name = pizza_data['name']
         pizza_desc = pizza_data['description']
         pizza_price = pizza_data['meta']['display_price']['with_tax']['formatted']
@@ -198,21 +179,22 @@ def create_basket_menu(headers, params, recipient_id):
             'title': f'{pizza_name}, {pizza_price}',
             'subtitle': pizza_desc,
             'image_url': image_url,
-            'buttons': [{
-                'type': 'postback',
-                'title': 'Добавить еще одну',
-                'payload': f'add {product_id}'
-            }, {
-                'type': 'postback',
-                'title': 'Удалить',
-                'payload': f'remove {product_id}'
-            }]
+            'buttons': [
+                {
+                    'type': 'postback',
+                    'title': 'Добавить еще одну',
+                    'payload': f'add {product_id}',
+                },
+                {
+                    'type': 'postback',
+                    'title': 'Удалить',
+                    'payload': f'remove {product_id}',
+                },
+            ],
         }
         menu_elements.append(data)
     request_content = {
-        'recipient': {
-            'id': recipient_id
-        },
+        'recipient': {'id': recipient_id},
         'message': {
             'attachment': {
                 'type': 'template',
@@ -220,13 +202,12 @@ def create_basket_menu(headers, params, recipient_id):
                     'template_type': 'generic',
                     'image_aspect_ratio': 'square',
                     'elements': menu_elements,
-                }
+                },
             }
-        }
+        },
     }
     response = requests.post(
-        url=FB_API,
-        params=params, headers=headers, json=request_content
+        url=FB_API, params=params, headers=headers, json=request_content
     )
     response.raise_for_status()
 
@@ -235,33 +216,26 @@ def create_basket_menu(headers, params, recipient_id):
 def create_delivery_buttons(headers, params, recipient_id, distance):
     if distance <= 20:
         menu_elements = [
-            {'title': 'Как получите заказ?',
-             'buttons': [{
-                 'type': 'postback',
-                 'title': 'Доставка',
-                 'payload': 'delivery',
-             },
-                 {
-                 'type': 'postback',
-                 'title': 'Самовывоз',
-                 'payload': 'pickup',
-             }]
-             }
+            {
+                'title': 'Как получите заказ?',
+                'buttons': [
+                    {'type': 'postback', 'title': 'Доставка', 'payload': 'delivery'},
+                    {'type': 'postback', 'title': 'Самовывоз', 'payload': 'pickup'},
+                ],
+            }
         ]
     else:
-        menu_elements = [{
-            'title': 'Как получите заказ?',
-            'buttons': [{
-                'type': 'postback',
-                'title': 'Самовывоз',
-                'payload': 'pickup'
-            }]
-        }]
+        menu_elements = [
+            {
+                'title': 'Как получите заказ?',
+                'buttons': [
+                    {'type': 'postback', 'title': 'Самовывоз', 'payload': 'pickup'}
+                ],
+            }
+        ]
 
     request_content = {
-        'recipient': {
-            'id': recipient_id
-        },
+        'recipient': {'id': recipient_id},
         'message': {
             'attachment': {
                 'type': 'template',
@@ -269,30 +243,26 @@ def create_delivery_buttons(headers, params, recipient_id, distance):
                     'template_type': 'generic',
                     'image_aspect_ratio': 'square',
                     'elements': menu_elements,
-                }
+                },
             }
-        }
+        },
     }
     response = requests.post(
-        url=FB_API,
-        params=params, headers=headers, json=request_content
+        url=FB_API, params=params, headers=headers, json=request_content
     )
     response.raise_for_status()
 
 
 @headers_wrapper
 def handle_button(headers, params, recipient_id, message):
-    categories = json.loads(
-        db.get('categories')) or moltin.get_all_categories()
+    categories = json.loads(db.get('categories')) or moltin.get_all_categories()
     products = json.loads(db.get('products'))
 
     if message in categories:
         menu_elements = create_all_menu(category_slug=message)
 
         request_content = {
-            'recipient': {
-                'id': recipient_id
-            },
+            'recipient': {'id': recipient_id},
             'message': {
                 'attachment': {
                     'type': 'template',
@@ -300,13 +270,12 @@ def handle_button(headers, params, recipient_id, message):
                         'template_type': 'generic',
                         'image_aspect_ratio': 'square',
                         'elements': menu_elements,
-                    }
+                    },
                 }
-            }
+            },
         }
         response = requests.post(
-            url=FB_API,
-            params=params, headers=headers, json=request_content
+            url=FB_API, params=params, headers=headers, json=request_content
         )
         response.raise_for_status()
         return 'HANDLE_MENU'
@@ -326,9 +295,7 @@ def handle_basket(headers, params, recipient_id, message):
     if message == 'back_to_menu':
         menu_elements = create_all_menu()
         request_content = {
-            'recipient': {
-                'id': recipient_id
-            },
+            'recipient': {'id': recipient_id},
             'message': {
                 'attachment': {
                     'type': 'template',
@@ -336,19 +303,20 @@ def handle_basket(headers, params, recipient_id, message):
                         'template_type': 'generic',
                         'image_aspect_ratio': 'square',
                         'elements': menu_elements,
-                    }
+                    },
                 }
-            }
+            },
         }
         response = requests.post(
-            url=FB_API,
-            params=params, headers=headers, json=request_content
+            url=FB_API, params=params, headers=headers, json=request_content
         )
         response.raise_for_status()
         return 'HANDLE_MENU'
     elif message == 'order':
         send_message(
-            recipient_id, message='Где вы находитесь? Введите адрес для выбора ближайшей пиццерии.')
+            recipient_id,
+            message='Где вы находитесь? Введите адрес для выбора ближайшей пиццерии.',
+        )
         return 'HANDLE_ORDER'
     elif message.split()[0] == 'add':
         product_id = message.split()[1]
@@ -358,8 +326,11 @@ def handle_basket(headers, params, recipient_id, message):
         return 'HANDLE_BASKET'
     elif message.split()[0] == 'remove':
         user_cart = moltin.get_cart(recipient_id)
-        cart_id = [product['cart_id']
-                   for product in user_cart if product['product_id'] == message.split()[1]][0]
+        cart_id = [
+            product['cart_id']
+            for product in user_cart
+            if product['product_id'] == message.split()[1]
+        ][0]
         moltin.delete_item_in_cart(recipient_id, cart_id)
         send_message(recipient_id, message='Удалили из корзины.')
         create_basket_menu(recipient_id)
@@ -373,7 +344,8 @@ def handle_order(headers, params, recipient_id, message):
     except YandexGeocoderAddressNotFound as error:
         logging.error(error)
         send_message(
-            recipient_id, message='Не смогли определить адрес, попробуйте еще.')
+            recipient_id, message='Не смогли определить адрес, попробуйте еще.'
+        )
         current_pos = None
 
     if current_pos is None:
@@ -401,10 +373,14 @@ def handle_delivery_choosing(headers, params, recipient_id, message):
 
     if message == 'pickup':
         send_message(
-            recipient_id, message=f'Отлично!\nСпасибо за заказ.\n\nВы можете забрать заказ по адресу: {closest_pizzeria}')
+            recipient_id,
+            message=f'Отлично!\nСпасибо за заказ.\n\nВы можете забрать заказ по адресу: {closest_pizzeria}',
+        )
     elif message == 'delivery':
         send_message(
-            recipient_id, message=f'Спасибо за заказ!\n\nЗаказ будет доставлен по адресу: {user_address}')
+            recipient_id,
+            message=f'Спасибо за заказ!\n\nЗаказ будет доставлен по адресу: {user_address}',
+        )
 
 
 def handle_users_reply(messaging_event):
