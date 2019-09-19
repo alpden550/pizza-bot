@@ -27,6 +27,7 @@ from yandex_geocoder import Client
 from yandex_geocoder.exceptions import YandexGeocoderAddressNotFound
 
 import moltin
+import utils
 
 
 def get_database():
@@ -41,46 +42,6 @@ def get_database():
         decode_responses=True,
     )
     return database
-
-
-def get_closest_pizzeria(coordinates, flow_slug='pizzerias'):
-    entries = moltin.get_all_entries(flow_slug)
-    pizzerias = []
-    for entry in entries:
-        pizzeria_name = entry['pizza-alias']
-        pizzeria_address = entry['pizza-address']
-        pizzeria_longitude = entry['longitude']
-        pizzetia_latitude = entry['latitude']
-        pizzeria_point = Point(pizzetia_latitude, pizzeria_longitude)
-        coordinates_point = Point(coordinates[1], coordinates[0])
-        pizzeria_distance = distance.distance(pizzeria_point, coordinates_point).km
-        pizzeria_id = entry['id']
-        data = {
-            'alias': pizzeria_name,
-            'address': pizzeria_address,
-            'longitude': pizzeria_longitude,
-            'latitude': pizzetia_latitude,
-            'distance': pizzeria_distance,
-            'id': pizzeria_id,
-        }
-        pizzerias.append(data)
-    closest_pizzeria = min(pizzerias, key=itemgetter('distance'))
-    return closest_pizzeria
-
-
-def calculate_distance_for_message(pizzeria):
-    distance = pizzeria['distance']
-    alias = pizzeria['alias']
-    address = pizzeria['address']
-    if distance <= 0.5:
-        message = f'Есть ресторан совсем рядом с вами. Доставка бесплатна, или можете забрать заказ самостоятельно, если не хотите ждать, адресс {address}.'
-    elif 0.5 < distance <= 5:
-        message = f'Ближайшая пиццерия всего в {int(distance)} км. Похоже, придется ехать до вас на самокате, стоимость доставки 100 рублей. Доставляем или самовывоз?'
-    elif 5 < distance <= 20:
-        message = f'Ваша пиццерия {alias}, стоимость доставки составит 300 рублей.'
-    else:
-        message = f'Простите, так далеко мы не доставляем. Ближайшая к вам пиццерия аж в {int(distance)} км от вас.'
-    return message, int(distance)
 
 
 def create_chunks(products, size=7):
@@ -227,12 +188,12 @@ def handle_button(update, context):
         db.set(chat_id, json.dumps(user_data))
         return 'HANDLE_MENU'
     else:
-        pizza_data = moltin.get_by_id(query.data)
+        pizza_data = json.loads(db.get(query.data)) or moltin.get_by_id(query.data)
         pizza_name = pizza_data['name']
         pizza_text = pizza_data['description']
         pizza_price = pizza_data['meta']['display_price']['with_tax']['formatted']
         image_id = pizza_data['relationships']['main_image']['data']['id']
-        image_url = moltin.get_picture(image_id)
+        image_url = db.get(image_id) or moltin.get_picture(image_id)
         basket_message = moltin.check_product_in_cart(chat_id, query.data) or ''
 
         keyboard = create_description_buttons()
@@ -348,7 +309,7 @@ def handle_waiting(update, context):
         except YandexGeocoderAddressNotFound as error:
             logging.error(error)
             update.message.reply_text(
-                text='Не смогли определить адресс, попробуйте еще.'
+                text='Не смогли определить адрес, попробуйте еще.'
             )
             current_pos = None
     else:
@@ -357,8 +318,8 @@ def handle_waiting(update, context):
     if current_pos is None:
         return 'WAITING_GEO'
 
-    closest_pizzeria = get_closest_pizzeria(current_pos)
-    message, distance = calculate_distance_for_message(closest_pizzeria)
+    closest_pizzeria = utils.get_closest_pizzeria(db, current_pos)
+    message, distance = utils.calculate_distance_for_message(closest_pizzeria)
     update.message.reply_text(
         text='Данные приняты, спасибо.', reply_markup=ReplyKeyboardRemove()
     )
