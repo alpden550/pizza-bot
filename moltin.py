@@ -50,8 +50,7 @@ def create_product(headers, name, description, price):
             'description': description,
             'manage_stock': False,
             'price': [
-                {'amount': int(f'{price}00'), 'currency': 'RUB',
-                 'includes_tax': True}
+                {'amount': int(f'{price}00'), 'currency': 'RUB', 'includes_tax': True}
             ],
             'status': 'live',
             'commodity_type': 'physical',
@@ -357,16 +356,14 @@ def get_customer_coordinates(headers, entry_id, flow_slug='adress'):
 @headers_wrapper
 def get_category_by_slug(headers, category_slug):
     url = f'{MOLTIN_URL}categories'
-    params = {
-        'filter': f'eq(slug,{category_slug})'
-    }
+    params = {'filter': f'eq(slug,{category_slug})'}
     response = requests.get(url=url, headers=headers, params=params)
     response.raise_for_status()
     products = response.json()['data'][0]['relationships']['products']['data']
     return {
         'name': response.json()['data'][0]['name'],
         'slug': response.json()['data'][0]['slug'],
-        'products': [product['id'] for product in products]
+        'products': [product['id'] for product in products],
     }
 
 

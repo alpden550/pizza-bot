@@ -5,3 +5,5 @@ redis==3.3.8
 requests==2.22.0
 transliterate==1.10.2
 yandex-geocoder==1.0.0
+gunicorn-19.9.0
+Flask==1.1.1
