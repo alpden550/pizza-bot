@@ -380,8 +380,3 @@ def get_all_categories(headers):
 
 if __name__ == "__main__":
     load_dotenv()
-    # pprint(get_category_by_slug('main'))
-    cart = get_cart('2397547040340425')
-    pprint(cart)
-    # item = delete_item_in_cart('2397547040340425', '43e51b26-d40f-4b3e-afa9-0fd9299a206e')
-    # print(item)
