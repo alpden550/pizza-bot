@@ -1,11 +1,9 @@
 import json
 import logging
 import os
-from operator import itemgetter
 
 import redis
 from dotenv import load_dotenv
-from geopy import Point, distance
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -319,11 +317,11 @@ def handle_waiting(update, context):
         return 'WAITING_GEO'
 
     closest_pizzeria = utils.get_closest_pizzeria(db, current_pos)
-    message, distance = utils.calculate_distance_for_message(closest_pizzeria)
+    message, dist = utils.calculate_distance_for_message(closest_pizzeria)
     update.message.reply_text(
         text='Данные приняты, спасибо.', reply_markup=ReplyKeyboardRemove()
     )
-    keyboard = create_delivery_buttons(distance)
+    keyboard = create_delivery_buttons(dist)
     context.bot.send_message(chat_id=chat_id, text=message, reply_markup=keyboard)
     user_data = json.loads(db.get(chat_id))
     user_data['closest_pizzeria'] = closest_pizzeria
@@ -361,7 +359,7 @@ def handle_delivery_choosing(update, context):
             chat_id=chat_id, text=f'Ваш заказ принят, ожидаем оплату.'
         )
         context.bot.deleteMessage(chat_id=chat_id, message_id=message_id)
-        user = moltin.create_customer_entry(
+        moltin.create_customer_entry(
             chat_id, user_name, customer_longitude, customer_latitude
         )
         deliverer = moltin.get_deliverer(pizzeria_id)
@@ -383,14 +381,14 @@ def remind_about_order(context):
 
 def create_invoice(context, chat_id):
     user_total = moltin.get_total(chat_id)
-    amount = int(user_total.split()[0].split('.')[0])
+    amount = user_total.split()[0].split('.')[0].replace(',', '')
     title = "Оплата заказа"
     description = "Пожалуйста, нажмите, чтобы оплатить заказ."
     payload = os.getenv('PAYMENT_PAYLOAD')
     provider_token = os.getenv('TG_TRANZZO_TOKEN')
     start_parameter = 'payment'
     currency = "RUB"
-    prices = [LabeledPrice("Оплатить заказ", amount * 100)]
+    prices = [LabeledPrice("Оплатить заказ", int(amount) * 100)]
     context.bot.sendInvoice(
         chat_id,
         title,
@@ -449,7 +447,7 @@ def handle_users_reply(update, context):
     try:
         next_state = state_handler(update, context)
     except Exception as error:
-        logging.error(error)
+        logging.exception(error)
         next_state = None
 
     if next_state is not None:

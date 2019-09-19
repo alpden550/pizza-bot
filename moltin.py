@@ -8,7 +8,6 @@ import requests
 
 from dotenv import load_dotenv
 from transliterate import translit
-from pprint import pprint
 
 MOLTIN_URL = 'https://api.moltin.com/v2/'
 
