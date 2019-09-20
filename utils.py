@@ -1,9 +1,25 @@
 import json
+import os
 from operator import itemgetter
 
+import redis
 from geopy import Point, distance
 
 import moltin
+
+
+def get_database():
+    db_url = os.getenv('REDIS_URL')
+    db_port = os.getenv('REDIS_PORT')
+    db_password = os.getenv('REDIS_PASSWORD')
+    database = redis.Redis(
+        host=db_url,
+        port=db_port,
+        password=db_password,
+        charset='utf-8',
+        decode_responses=True,
+    )
+    return database
 
 
 def get_closest_pizzeria(db, coordinates, flow_slug='pizzerias'):

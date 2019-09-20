@@ -3,7 +3,6 @@ import logging
 import os
 from functools import wraps
 
-import redis
 import requests
 from dotenv import load_dotenv
 from flask import Flask, request
@@ -29,20 +28,6 @@ def headers_wrapper(func):
         return func(headers, params, *args, **kwargs)
 
     return inner
-
-
-def get_database():
-    db_url = os.getenv('REDIS_URL')
-    db_port = os.getenv('REDIS_PORT')
-    db_password = os.getenv('REDIS_PASSWORD')
-    database = redis.Redis(
-        host=db_url,
-        port=db_port,
-        password=db_password,
-        charset='utf-8',
-        decode_responses=True,
-    )
-    return database
 
 
 @app.route('/', methods=['GET'])
@@ -78,7 +63,8 @@ def create_category_menu(categories):
 
 
 def create_all_menu(category_slug='main'):
-    categories = json.loads(db.get('categories')) or moltin.get_all_categories()
+    categories = json.loads(
+        db.get('categories')) or moltin.get_all_categories()
     categories.remove(category_slug)
 
     menu_elements = [
@@ -117,7 +103,8 @@ def create_all_menu(category_slug='main'):
 
 @headers_wrapper
 def send_message(headers, params, recipient_id, message):
-    request_content = {"recipient": {"id": recipient_id}, "message": {"text": message}}
+    request_content = {"recipient": {"id": recipient_id},
+                       "message": {"text": message}}
     response = requests.post(
         url=FB_API, params=params, headers=headers, json=request_content
     )
@@ -169,7 +156,8 @@ def create_basket_menu(headers, params, recipient_id):
     ]
     for product in user_cart:
         product_id = product['product_id']
-        pizza_data = json.loads(db.get(product_id)) or moltin.get_by_id(product)
+        pizza_data = json.loads(
+            db.get(product_id)) or moltin.get_by_id(product)
         pizza_name = pizza_data['name']
         pizza_desc = pizza_data['description']
         pizza_price = pizza_data['meta']['display_price']['with_tax']['formatted']
@@ -255,7 +243,8 @@ def create_delivery_buttons(headers, params, recipient_id, distance):
 
 @headers_wrapper
 def handle_button(headers, params, recipient_id, message):
-    categories = json.loads(db.get('categories')) or moltin.get_all_categories()
+    categories = json.loads(
+        db.get('categories')) or moltin.get_all_categories()
     products = json.loads(db.get('products'))
 
     if message in categories:
@@ -325,13 +314,10 @@ def handle_basket(headers, params, recipient_id, message):
         create_basket_menu(recipient_id)
         return 'HANDLE_BASKET'
     elif message.split()[0] == 'remove':
+        product_id = message.split()[1]
         user_cart = moltin.get_cart(recipient_id)
-        cart_id = [
-            product['cart_id']
-            for product in user_cart
-            if product['product_id'] == message.split()[1]
-        ][0]
-        moltin.delete_item_in_cart(recipient_id, cart_id)
+        product_id_in_cart = next(product['cart_id'] for product in user_cart if product['product_id'] == product_id)
+        moltin.delete_item_in_cart(recipient_id, product_id_in_cart)
         send_message(recipient_id, message='Удалили из корзины.')
         create_basket_menu(recipient_id)
         return 'HANDLE_BASKET'
@@ -450,6 +436,6 @@ if __name__ == '__main__':
     load_dotenv()
 
     global db
-    db = get_database()
+    db = utils.get_database()
 
     app.run(host='0.0.0.0', debug=True)
