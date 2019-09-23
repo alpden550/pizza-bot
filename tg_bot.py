@@ -434,6 +434,11 @@ def handle_users_reply(update, context):
         user = db.get(chat_id)
         user_state = json.loads(user)['state']
 
+    if user_state == 'START':
+        user = {}
+        user["state"] = 'START'
+        db.set(chat_id, json.dumps(user))
+
     states_functions = {
         'START': start,
         'HANDLE_MENU': handle_button,

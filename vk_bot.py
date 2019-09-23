@@ -428,6 +428,7 @@ def handle_payment(event, vk):
 
 
 def handle_user_reply(event, vk):
+    print(event.user_id)
     if event.extra_values.get("payload"):
         user_reply = json.loads(event.payload)
         user_id = event.user_id
@@ -448,6 +449,11 @@ def handle_user_reply(event, vk):
         except (TypeError, JSONDecodeError) as error:
             logging.exception(error)
             user_state = None
+
+    if user_state == 'START':
+        user = {}
+        user["state"] = 'START'
+        db.set(f"vk_{user_id}", json.dumps(user))
 
     states_functions = {
         "START": start,
@@ -470,7 +476,7 @@ def handle_user_reply(event, vk):
         return
 
     user = db.get(f"vk_{user_id}")
-    if user:
+    if user is not None:
         user_data = json.loads(user)
         user_data["state"] = next_state
     else:

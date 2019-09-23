@@ -7,6 +7,7 @@ import redis
 from geopy import Point, distance
 
 import moltin
+from dotenv import load_dotenv
 
 
 def get_database():
@@ -84,4 +85,5 @@ def get_yandex_map(locations):
 
 
 if __name__ == "__main__":
-    pass
+    load_dotenv()
+    db = get_database()
