@@ -14,7 +14,7 @@ Bot in FB Messanger:
 
 ![](images/fb.gif)
 
-Bot in VK:
+Bot in VK(write it in [https://vk.com/club182098076](https://vk.com/im?media=&sel=-182098076)):
 
 ![](images/vk.gif)
 
