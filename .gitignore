@@ -127,3 +127,4 @@ menu.json
 addresses.json
 .pre-commit-config.yaml
 .DS_Store
+test.py
