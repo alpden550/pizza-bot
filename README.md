@@ -81,3 +81,9 @@ To run locally use `ngrok` and run script:
 ```bash
 python fb_bot.py
 ```
+
+To run VK bot:
+
+```bash
+python vk_bot.py
+```
