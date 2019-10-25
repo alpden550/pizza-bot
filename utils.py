@@ -66,7 +66,7 @@ def calculate_distance_for_message(pizzeria):
 
 def create_chunks(products, size=7):
     for i in range(0, len(products), size):
-        yield products[i : i + size]
+        yield products[i: i + size]
 
 
 def get_yandex_map(locations):

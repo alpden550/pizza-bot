@@ -12,8 +12,6 @@ from vk_api.exceptions import ApiError
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkEventType, VkLongPoll
 from vk_api.utils import get_random_id
-from yandex_geocoder import Client
-from yandex_geocoder.exceptions import YandexGeocoderAddressNotFound
 
 import moltin
 import utils
@@ -303,8 +301,8 @@ def handle_locations(event, vk):
     user_id = event.user_id
 
     try:
-        current_pos = Client.coordinates(message)
-    except YandexGeocoderAddressNotFound as error:
+        current_pos = utils.fetch_coordinates(message)
+    except IndexError as error:
         logging.error(error)
         vk.messages.send(
             user_id=user_id,
@@ -353,7 +351,7 @@ def handle_delivery(event, vk):
     )
 
     if payload in ["pickup"]:
-        locations = Client.coordinates(pizzeria_address)
+        locations = utils.fetch_coordinates(pizzeria_address)
         pizza_map = utils.get_yandex_map(locations)
         keyboard = create_payment_buttons(amount)
         try:
@@ -428,7 +426,6 @@ def handle_payment(event, vk):
 
 
 def handle_user_reply(event, vk):
-    print(event.user_id)
     if event.extra_values.get("payload"):
         user_reply = json.loads(event.payload)
         user_id = event.user_id
