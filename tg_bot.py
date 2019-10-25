@@ -21,8 +21,6 @@ from telegram.ext import (
     PreCheckoutQueryHandler,
     Updater,
 )
-from yandex_geocoder import Client
-from yandex_geocoder.exceptions import YandexGeocoderAddressNotFound
 
 import moltin
 import utils
@@ -303,8 +301,8 @@ def handle_waiting(update, context):
     chat_id = message.chat_id
     if message.text:
         try:
-            current_pos = Client.coordinates(message.text)
-        except YandexGeocoderAddressNotFound as error:
+            current_pos = utils.fetch_coordinates(message.text)
+        except IndexError as error:
             logging.error(error)
             update.message.reply_text(
                 text='Не смогли определить адрес, попробуйте еще.'

@@ -84,6 +84,18 @@ def get_yandex_map(locations):
     return response.url
 
 
+def fetch_coordinates(place):
+    apikey = os.getenv('YANDEX_API_KEY')
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    params = {"geocode": place, "apikey": apikey, "format": "json"}
+    response = requests.get(base_url, params=params)
+    response.raise_for_status()
+    places_found = response.json()['response']['GeoObjectCollection']['featureMember']
+    most_relevant = places_found[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lon, lat
+
+
 if __name__ == "__main__":
     load_dotenv()
     db = get_database()
