@@ -3,7 +3,7 @@ import json
 from dotenv import load_dotenv
 
 import moltin
-from fb_bot import get_database
+from utils import get_database
 
 
 def cache_categories(db):
@@ -17,7 +17,7 @@ def cache_categories(db):
 def cache_products(db):
     products_data = moltin.get_products()
     product_idies = [product_id for product_id, product_name in products_data]
-    db.set('products', json.dumps(product_idies))
+    db.set('products', json.dumps(products_data))
     for product_id in product_idies:
         product = moltin.get_by_id(product_id)
         image_id = product['relationships']['main_image']['data']['id']
@@ -34,9 +34,11 @@ def cache_pizzerias(db):
 
 def main():
     db = get_database()
-    cache_categories(db)
-    cache_products(db)
-    cache_pizzerias(db)
+    # cache_categories(db)
+    # cache_products(db)
+    # cache_pizzerias(db)
+    data = db.get('products')
+    print(json.loads(data))
 
 
 if __name__ == "__main__":
