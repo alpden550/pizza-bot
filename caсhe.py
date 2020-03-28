@@ -34,10 +34,9 @@ def cache_pizzerias(db):
 
 def main():
     db = redis.Redis(decode_responses=True)
-    # cache_categories(db)
-    # cache_products(db)
-    # cache_pizzerias(db)
-    print(db.get('pizzerias'))
+    cache_categories(db)
+    cache_products(db)
+    cache_pizzerias(db)
 
 
 if __name__ == "__main__":
