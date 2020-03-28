@@ -8,15 +8,15 @@ Temporality users data stored in Redis.
 
 Bot in Telegram (find it @dvmn_pizzashop_bot):
 
-![](images/tg.gif)
+![tg](images/tg.gif)
 
 Bot in FB Messanger:
 
-![](images/fb.gif)
+![fb](images/fb.gif)
 
 Bot in VK(write it in [https://vk.com/club182098076](https://vk.com/im?media=&sel=-182098076)):
 
-![](images/vk.gif)
+![vk](images/vk.gif)
 
 ## How to install
 
@@ -64,6 +64,31 @@ Then use pip (or pip3, if there is a conflict with Python2) to install dependenc
 
 ```bash
 pip install -r requirements.txt
+```
+
+## How run sync Telegram Bot
+
+Set env vars:
+
+```bash
+export TG_TOKEN=token
+MOLTIN_CLIENT_ID=id client
+export MOLTIN_CLIENT_SECRET=client secret
+export YANDEX_API_KEY=yandex key to use map
+export TG_TRANZZO_TOKEN=telegram tranzo token
+export PAYMENT_PAYLOAD=payload for tg payment
+```
+
+Install redis local and restart it in Ubuntu:
+
+```bash
+sudo systemctl enable redis-server.service
+```
+
+And run bot:
+
+```bash
+python async_tg_bot.py
 ```
 
 ## How to use
