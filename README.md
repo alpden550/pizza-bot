@@ -66,13 +66,13 @@ Then use pip (or pip3, if there is a conflict with Python2) to install dependenc
 pip install -r requirements.txt
 ```
 
-## How run sync Telegram Bot
+## How run async Telegram Bot
 
 Set env vars:
 
 ```bash
 export TG_TOKEN=token
-MOLTIN_CLIENT_ID=id client
+export MOLTIN_CLIENT_ID=id client
 export MOLTIN_CLIENT_SECRET=client secret
 export YANDEX_API_KEY=yandex key to use map
 export TG_TRANZZO_TOKEN=telegram tranzo token
