@@ -16,7 +16,7 @@ from more_itertools import chunked
 import moltin
 import utils
 
-storage = RedisStorage2(db=2)
+storage = RedisStorage2(db=5)
 bot = Bot(token=os.getenv('TG_TOKEN'))
 dp = Dispatcher(bot=bot, storage=storage)
 
