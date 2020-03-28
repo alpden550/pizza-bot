@@ -184,7 +184,7 @@ def handle_button(update, context):
         db.set(chat_id, json.dumps(user_data))
         return 'HANDLE_MENU'
     else:
-        pizza_data = json.loads(db.get(query.data)) or moltin.get_by_id(query.data)
+        pizza_data = moltin.get_by_id(query.data)
         pizza_name = pizza_data['name']
         pizza_text = pizza_data['description']
         pizza_price = pizza_data['meta']['display_price']['with_tax']['formatted']
@@ -245,6 +245,7 @@ def handle_description(update, context):
     elif query.data.split()[0] == 'cart':
         quantity = int(query.data.split()[1])
         moltin.put_in_cart(chat_id, product_id, quantity)
+        print(chat_id, product_id)
         context.bot.answer_callback_query(
             callback_query_id=query.id, text='Добавили в корзину!'
         )

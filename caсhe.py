@@ -1,5 +1,5 @@
 import json
-
+import redis
 from dotenv import load_dotenv
 
 import moltin
@@ -33,12 +33,11 @@ def cache_pizzerias(db):
 
 
 def main():
-    db = get_database()
+    db = redis.Redis(decode_responses=True)
     # cache_categories(db)
     # cache_products(db)
     # cache_pizzerias(db)
-    data = db.get('products')
-    print(json.loads(data))
+    print(db.get('pizzerias'))
 
 
 if __name__ == "__main__":

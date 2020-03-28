@@ -24,8 +24,8 @@ def get_database():
     return database
 
 
-def get_closest_pizzeria(db, coordinates, flow_slug="pizzerias"):
-    entries = json.loads(db.get(flow_slug)) or moltin.get_all_entries(flow_slug)
+def get_closest_pizzeria(coordinates, flow_slug="pizzerias", all_pizzerias=None):
+    entries = all_pizzerias or moltin.get_all_entries(flow_slug)
     pizzerias = []
     for entry in entries:
         pizzeria_name = entry["pizza-alias"]
