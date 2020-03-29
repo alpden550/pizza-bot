@@ -8,7 +8,15 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, LabeledPrice, ParseMode, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    LabeledPrice,
+    ParseMode,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+)
 from aiogram.utils.emoji import emojize
 from more_itertools import chunked
 
@@ -287,6 +295,7 @@ async def handle_geo(message: types.Message, state: FSMContext):
         location, all_pizzerias=json.loads(all_pizzerias))
     reply_message, distance = utils.calculate_distance_for_message(
         closest_pizzeria)
+
     await message.answer('Данные приняты, спасибо.', reply_markup=ReplyKeyboardRemove())
     await state.update_data(
         closest_pizzeria=closest_pizzeria,
@@ -307,37 +316,40 @@ async def handle_delivery(callback: types.CallbackQuery, state: FSMContext):
     pizzeria = state_data['closest_pizzeria']
     pizza_address = pizzeria['address']
     pizza_name = pizzeria['alias']
-    pizza_image = utils.get_yandex_map(
-        (pizzeria['longitude'], pizzeria['latitude']))
     customer_geo = state_data['customer_geo']
-    customer_image = utils.get_yandex_map(customer_geo)
     keyboard = create_payment_buttons()
 
     if callback.data == 'pickup':
+        await bot.send_location(
+            chat_id=callback.from_user.id,
+            longitude=pizzeria['longitude'],
+            latitude=pizzeria['latitude'],
+        )
+        await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
         message = f"""
             Отлично!
 
             Вы можете забрать ваш заказ в ресторане {pizza_name} по адресу: {pizza_address}.
+
+            Как хотите оплатить заказ?
         """
-        await bot.send_photo(
-            caption=dedent(message),
-            chat_id=callback.from_user.id,
-            photo=pizza_image,
-        )
-        await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
         await bot.send_message(
             chat_id=callback.from_user.id,
-            text='Как хотите оплатить?',
-            reply_markup=keyboard,
+            text=dedent(message),
+            reply_markup=keyboard
         )
         await BotState.pay.set()
     elif callback.data == 'delivery':
-        await bot.send_photo(
+        await bot.send_message(
             chat_id=callback.from_user.id,
-            caption='Отлично!\n\nВезем ваш заказ к вам.',
-            photo=customer_image,
+            text='Отлично!\n\nВезем ваш заказ к вам:',
         )
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
+        await bot.send_location(
+            chat_id=callback.from_user.id,
+            longitude=customer_geo[0],
+            latitude=customer_geo[-1],
+        )
         await bot.send_message(
             chat_id=callback.from_user.id,
             text='Как хотите оплатить?',
