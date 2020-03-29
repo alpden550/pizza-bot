@@ -8,13 +8,13 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
-                           LabeledPrice, ParseMode, ReplyKeyboardRemove)
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, LabeledPrice, ParseMode, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from aiogram.utils.emoji import emojize
 from more_itertools import chunked
 
 import moltin
 import utils
+from aiogram.types.message import ContentType
 
 storage = RedisStorage2(db=5)
 bot = Bot(token=os.getenv('TG_TOKEN'))
@@ -248,10 +248,12 @@ async def handle_basket(callback: types.CallbackQuery, state: FSMContext):
         await edit_menu(callback, state, chunk=0)
         await BotState.menu.set()
     elif callback.data == 'sell':
+        keyboard = ReplyKeyboardMarkup()
+        keyboard.add(KeyboardButton('Отправить локацию', request_location=True))
         await bot.send_message(
-            text=emojize('Где вы находитесь :house: ?'),
+            text=emojize('Где вы находитесь :house: ?\n\nВведите адрес или отправьте геоллокацию с телефона.'),
             chat_id=callback.from_user.id,
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=keyboard,
         )
         await bot.delete_message(chat_id=callback.from_user.id, message_id=callback.message.message_id)
         await BotState.geo.set()
@@ -264,22 +266,28 @@ async def handle_basket(callback: types.CallbackQuery, state: FSMContext):
 
 
 @dp.message_handler(state=BotState.geo)
+@dp.message_handler(state=BotState.geo, content_types=ContentType.LOCATION)
 async def handle_geo(message: types.Message, state: FSMContext):
-    try:
-        location = utils.fetch_coordinates(message.text)
-    except IndexError:
-        location = None
 
-    if location is None:
-        await message.answer(emojize('Не смогли определить адрес :house:, попробуйте еще.'))
-        await BotState.geo.set()
+    if message.location:
+        user_location = message.location
+        location = (user_location['longitude'], user_location['latitude'])
+    else:
+        try:
+            location = utils.fetch_coordinates(message.text)
+        except IndexError:
+            location = None
+
+        if location is None:
+            await message.answer(emojize('Не смогли определить адрес :house:, попробуйте еще.'))
+            await BotState.geo.set()
 
     all_pizzerias = await get_from_redis('pizzerias')
     closest_pizzeria = utils.get_closest_pizzeria(
         location, all_pizzerias=json.loads(all_pizzerias))
     reply_message, distance = utils.calculate_distance_for_message(
         closest_pizzeria)
-    await message.answer('Данные приняты, спасибо.')
+    await message.answer('Данные приняты, спасибо.', reply_markup=ReplyKeyboardRemove())
     await state.update_data(
         closest_pizzeria=closest_pizzeria,
         customer_geo=location,
