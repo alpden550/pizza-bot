@@ -17,7 +17,6 @@ def get_database():
     return database
 
 
-
 def get_closest_pizzeria(coordinates, flow_slug="pizzerias", all_pizzerias=None):
     entries = all_pizzerias or moltin.get_all_entries(flow_slug)
     pizzerias = []

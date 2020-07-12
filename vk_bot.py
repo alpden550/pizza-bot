@@ -314,7 +314,8 @@ def handle_locations(event, vk):
     if current_pos is None:
         return "HANDLE_GEO"
 
-    closest_pizzeria = utils.get_closest_pizzeria(db, current_pos)
+    closest_pizzeria = utils.get_closest_pizzeria(current_pos)
+
     message, dist = utils.calculate_distance_for_message(closest_pizzeria)
     keyboard = create_delivery_buttons(distance=dist)
     vk.messages.send(
