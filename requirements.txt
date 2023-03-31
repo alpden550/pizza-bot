@@ -5,7 +5,7 @@ emoji==0.5.4
 more-itertools==7.2.0
 python-dotenv==0.10.3
 python-telegram-bot==12.0.0
-redis==3.3.8
+redis==4.4.4
 requests==2.22.0
 transliterate==1.10.2
 yandex-geocoder==1.0.0
