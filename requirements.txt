@@ -10,5 +10,5 @@ requests==2.22.0
 transliterate==1.10.2
 yandex-geocoder==1.0.0
 gunicorn==19.9.0
-Flask==1.1.1
+Flask==2.3.2
 vk-api==11.5.0
